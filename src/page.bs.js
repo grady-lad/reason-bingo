@@ -3,6 +3,8 @@
 
 var List        = require("bs-platform/lib/js/list.js");
 var $$Array     = require("bs-platform/lib/js/array.js");
+var Block       = require("bs-platform/lib/js/block.js");
+var Curry       = require("bs-platform/lib/js/curry.js");
 var React       = require("react");
 var $$String    = require("bs-platform/lib/js/string.js");
 var Pervasives  = require("bs-platform/lib/js/pervasives.js");
@@ -113,10 +115,15 @@ var ViewPlayer = /* module */[
 
 var component$2 = ReasonReact.statelessComponent("EntryItem");
 
-function make$2(entryItem, _) {
+function make$2(entryItem, handleClick, _) {
+  var click = function () {
+    return Curry._1(handleClick, entryItem[/* id */0]);
+  };
   var newrecord = component$2.slice();
   newrecord[/* render */9] = (function () {
-      return React.createElement("li", undefined, React.createElement("span", {
+      return React.createElement("li", {
+                  onClick: click
+                }, React.createElement("span", {
                       className: "phrase"
                     }, entryItem[/* phrase */1]), React.createElement("span", {
                       className: "points"
@@ -132,11 +139,11 @@ var EntryItem = /* module */[
 
 var component$3 = ReasonReact.statelessComponent("EntryItems");
 
-function make$3(entries, _) {
+function make$3(entries, handleClick, _) {
   var newrecord = component$3.slice();
   newrecord[/* render */9] = (function () {
       return React.createElement("ul", undefined, $$Array.of_list(List.map((function (entryItem) {
-                            return ReasonReact.element(/* None */0, /* None */0, make$2(entryItem, /* array */[]));
+                            return ReasonReact.element(/* None */0, /* None */0, make$2(entryItem, handleClick, /* array */[]));
                           }), entries)));
     });
   return newrecord;
@@ -168,14 +175,61 @@ var GameScore = /* module */[
   /* make */make$4
 ];
 
-var pageComponent = ReasonReact.statelessComponent("Page");
+var pageComponent = ReasonReact.reducerComponent("Page");
+
+function markEntry(entries, id) {
+  return List.map((function (item) {
+                if (id === item[/* id */0]) {
+                  return /* record */[
+                          /* id */item[/* id */0],
+                          /* phrase */item[/* phrase */1],
+                          /* points */item[/* points */2],
+                          /* marked */1 - item[/* marked */3]
+                        ];
+                } else {
+                  return item;
+                }
+              }), entries);
+}
 
 function make$5() {
   var newrecord = pageComponent.slice();
-  newrecord[/* render */9] = (function () {
+  newrecord[/* render */9] = (function (param) {
+      var send = param[/* send */4];
+      var match = param[/* state */2];
+      var entries = match[/* entries */2];
       return React.createElement("div", {
                   className: "content"
-                }, ReasonReact.element(/* None */0, /* None */0, make("BUZZWORD BING", /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$1("Martin", 1, /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$3(initialEntries, /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$4(summedScore(initialEntries), /* array */[])), React.createElement("button", undefined, "New Game"));
+                }, ReasonReact.element(/* None */0, /* None */0, make("BUZZWORD BING", /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$1(match[/* name */1], match[/* gameNumber */0], /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$3(entries, (function (_id) {
+                            return Curry._1(send, /* Mark */Block.__(0, [_id]));
+                          }), /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$4(summedScore(entries), /* array */[])), React.createElement("button", {
+                      onClick: (function () {
+                          return Curry._1(send, /* NewGame */0);
+                        })
+                    }, "New Game"));
+    });
+  newrecord[/* initialState */10] = (function () {
+      return initialModel;
+    });
+  newrecord[/* reducer */12] = (function (action, state) {
+      if (typeof action === "number") {
+        return /* Update */Block.__(0, [/* record */[
+                    /* gameNumber */state[/* gameNumber */0],
+                    /* name */state[/* name */1],
+                    /* entries */initialEntries
+                  ]]);
+      } else if (action.tag) {
+        return /* SideEffects */Block.__(2, [(function () {
+                      console.log("hello!");
+                      return /* () */0;
+                    })]);
+      } else {
+        return /* Update */Block.__(0, [/* record */[
+                    /* gameNumber */state[/* gameNumber */0],
+                    /* name */state[/* name */1],
+                    /* entries */markEntry(state[/* entries */2], action[0])
+                  ]]);
+      }
     });
   return newrecord;
 }
@@ -191,5 +245,6 @@ exports.EntryItem      = EntryItem;
 exports.EntryItems     = EntryItems;
 exports.GameScore      = GameScore;
 exports.pageComponent  = pageComponent;
+exports.markEntry      = markEntry;
 exports.make           = make$5;
 /* component Not a pure module */
