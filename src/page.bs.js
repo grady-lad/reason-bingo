@@ -119,9 +119,11 @@ function make$2(entryItem, handleClick, _) {
   var click = function () {
     return Curry._1(handleClick, entryItem[/* id */0]);
   };
+  var isMarked = entryItem[/* marked */3] ? "marked" : "";
   var newrecord = component$2.slice();
   newrecord[/* render */9] = (function () {
       return React.createElement("li", {
+                  className: isMarked,
                   onClick: click
                 }, React.createElement("span", {
                       className: "phrase"
@@ -201,7 +203,7 @@ function make$5() {
       return React.createElement("div", {
                   className: "content"
                 }, ReasonReact.element(/* None */0, /* None */0, make("BUZZWORD BING", /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$1(match[/* name */1], match[/* gameNumber */0], /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$3(entries, (function (_id) {
-                            return Curry._1(send, /* Mark */Block.__(0, [_id]));
+                            return Curry._1(send, /* Mark */[_id]);
                           }), /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$4(summedScore(entries), /* array */[])), React.createElement("button", {
                       onClick: (function () {
                           return Curry._1(send, /* NewGame */0);
@@ -212,22 +214,17 @@ function make$5() {
       return initialModel;
     });
   newrecord[/* reducer */12] = (function (action, state) {
-      if (typeof action === "number") {
-        return /* Update */Block.__(0, [/* record */[
-                    /* gameNumber */state[/* gameNumber */0],
-                    /* name */state[/* name */1],
-                    /* entries */initialEntries
-                  ]]);
-      } else if (action.tag) {
-        return /* SideEffects */Block.__(2, [(function () {
-                      console.log("hello!");
-                      return /* () */0;
-                    })]);
-      } else {
+      if (action) {
         return /* Update */Block.__(0, [/* record */[
                     /* gameNumber */state[/* gameNumber */0],
                     /* name */state[/* name */1],
                     /* entries */markEntry(state[/* entries */2], action[0])
+                  ]]);
+      } else {
+        return /* Update */Block.__(0, [/* record */[
+                    /* gameNumber */state[/* gameNumber */0] + 1 | 0,
+                    /* name */state[/* name */1],
+                    /* entries */initialEntries
                   ]]);
       }
     });

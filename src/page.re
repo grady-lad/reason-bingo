@@ -14,8 +14,7 @@ type model = {
 
 type action =
   | NewGame
-  | Mark (int)
-  | NewRandom (int);
+  | Mark (int);
 
 let initialEntries = [
   { id: 1, phrase: "Future Proof", points: 100, marked: false },
@@ -49,7 +48,7 @@ let summedScore = (entries: list(entry)) : int => {
 /* Components */
 module Header = {
   let component =  ReasonReact.statelessComponent("Header");
-  let make = (~title, _children) => {
+  let make = (~title: string, _children) => {
     ...component,
     render: (_) =>
       <div>
@@ -62,7 +61,7 @@ module ViewPlayer = {
   let createTitle = (name: string, gameNum: int) : string => name ++ " - Game " ++ string_of_int(gameNum);
   let gameTitle = (name: string, gameNum: int ) : string => createTitle(name, gameNum) |> String.uppercase;
   let component = ReasonReact.statelessComponent("ViewPlayer");
-  let make = (~name, ~gameNumber, _children) => {
+  let make = (~name: string, ~gameNumber: int, _children) => {
     ...component,
     render: (_) =>
       <div>
@@ -73,12 +72,13 @@ module ViewPlayer = {
 
 module EntryItem = {
   let component = ReasonReact.statelessComponent("EntryItem");
-  let make = (~entryItem, ~handleClick, _children) => {
+  let make = (~entryItem: entry, ~handleClick: (int) => unit, _children) => {
   let click = (_) => handleClick(entryItem.id);
+  let isMarked = if (entryItem.marked) "marked" else "";
     {
     ...component,
     render: (_) =>
-      <li onClick={click}>
+      <li className={isMarked} onClick={click}>
         <span className="phrase"> (str(entryItem.phrase)) </span>
         <span className="points"> (str(string_of_int(entryItem.points))) </span>
       </li>
@@ -88,7 +88,7 @@ module EntryItem = {
 
 module EntryItems = {
   let component = ReasonReact.statelessComponent("EntryItems");
-  let make = (~entries, ~handleClick, _children) => {
+  let make = (~entries: list(entry), ~handleClick: (int) => unit, _children) => {
     ...component,
     render: (_) =>
       <ul>
@@ -103,7 +103,7 @@ module EntryItems = {
 
 module GameScore = {
   let component = ReasonReact.statelessComponent("GameScore");
-  let make = (~score, _children) => {
+  let make = (~score: int, _children) => {
     ...component,
     render: (_) =>
     <div className="score">
@@ -128,9 +128,8 @@ let make = (_children) => {
   },
   reducer: (action, state) =>
     switch (action) {
-    | NewGame => ReasonReact.Update({...state, entries: initialEntries})
+    | NewGame => ReasonReact.Update({...state, entries: initialEntries, gameNumber: (state.gameNumber + 1)})
     | Mark (id) => ReasonReact.Update({...state, entries: markEntry(state.entries, id)})
-    | NewRandom (_) => ReasonReact.SideEffects(_self => Js.log("hello!"))
     },
   render: ({state: {name, entries, gameNumber}, send}) => {
     <div className="content">
