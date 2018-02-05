@@ -8,6 +8,7 @@ var Curry       = require("bs-platform/lib/js/curry.js");
 var React       = require("react");
 var $$String    = require("bs-platform/lib/js/string.js");
 var Pervasives  = require("bs-platform/lib/js/pervasives.js");
+var Json_decode = require("@glennsl/bs-json/src/Json_decode.bs.js");
 var ReasonReact = require("reason-react/src/ReasonReact.js");
 
 var initialEntries = /* :: */[
@@ -45,7 +46,7 @@ var initialEntries = /* :: */[
 ];
 
 var initialModel = /* record */[
-  /* gameNumber */1,
+  /* gameNumber */0,
   /* name */"Martin",
   /* entries */initialEntries
 ];
@@ -68,6 +69,19 @@ function summedScore(entries) {
                   }), List.filter((function (item) {
                           return item[/* marked */3];
                         }))(entries)));
+}
+
+function parseRandomEntryJson(json) {
+  return /* record */[
+          /* id */Json_decode.field("id", Json_decode.$$int, json),
+          /* phrase */Json_decode.field("phrase", Json_decode.string, json),
+          /* points */Json_decode.field("points", Json_decode.$$int, json),
+          /* marked : false */0
+        ];
+}
+
+function parseRandomEntries(json) {
+  return Json_decode.list(parseRandomEntryJson, json);
 }
 
 var component = ReasonReact.statelessComponent("Header");
@@ -196,6 +210,10 @@ function markEntry(entries, id) {
 
 function make$5() {
   var newrecord = pageComponent.slice();
+  newrecord[/* didMount */4] = (function (self) {
+      Curry._1(self[/* send */4], /* LoadGame */0);
+      return /* NoUpdate */0;
+    });
   newrecord[/* render */9] = (function (param) {
       var send = param[/* send */4];
       var match = param[/* state */2];
@@ -203,10 +221,10 @@ function make$5() {
       return React.createElement("div", {
                   className: "content"
                 }, ReasonReact.element(/* None */0, /* None */0, make("BUZZWORD BING", /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$1(match[/* name */1], match[/* gameNumber */0], /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$3(entries, (function (_id) {
-                            return Curry._1(send, /* Mark */[_id]);
+                            return Curry._1(send, /* Mark */Block.__(1, [_id]));
                           }), /* array */[])), ReasonReact.element(/* None */0, /* None */0, make$4(summedScore(entries), /* array */[])), React.createElement("button", {
                       onClick: (function () {
-                          return Curry._1(send, /* NewGame */0);
+                          return Curry._1(send, /* LoadGame */0);
                         })
                     }, "New Game"));
     });
@@ -214,7 +232,18 @@ function make$5() {
       return initialModel;
     });
   newrecord[/* reducer */12] = (function (action, state) {
-      if (action) {
+      if (typeof action === "number") {
+        return /* SideEffects */Block.__(2, [(function (self) {
+                      fetch("http://localhost:3000/random-entries/").then((function (prim) {
+                                return prim.json();
+                              })).then((function (json) {
+                              var entries = Json_decode.list(parseRandomEntryJson, json);
+                              Curry._1(self[/* send */4], /* NewGame */Block.__(0, [entries]));
+                              return Promise.resolve(entries);
+                            }));
+                      return /* () */0;
+                    })]);
+      } else if (action.tag) {
         return /* Update */Block.__(0, [/* record */[
                     /* gameNumber */state[/* gameNumber */0],
                     /* name */state[/* name */1],
@@ -224,24 +253,26 @@ function make$5() {
         return /* Update */Block.__(0, [/* record */[
                     /* gameNumber */state[/* gameNumber */0] + 1 | 0,
                     /* name */state[/* name */1],
-                    /* entries */initialEntries
+                    /* entries */action[0]
                   ]]);
       }
     });
   return newrecord;
 }
 
-exports.initialEntries = initialEntries;
-exports.initialModel   = initialModel;
-exports.str            = str;
-exports.summarize      = summarize;
-exports.summedScore    = summedScore;
-exports.Header         = Header;
-exports.ViewPlayer     = ViewPlayer;
-exports.EntryItem      = EntryItem;
-exports.EntryItems     = EntryItems;
-exports.GameScore      = GameScore;
-exports.pageComponent  = pageComponent;
-exports.markEntry      = markEntry;
-exports.make           = make$5;
+exports.initialEntries       = initialEntries;
+exports.initialModel         = initialModel;
+exports.str                  = str;
+exports.summarize            = summarize;
+exports.summedScore          = summedScore;
+exports.parseRandomEntryJson = parseRandomEntryJson;
+exports.parseRandomEntries   = parseRandomEntries;
+exports.Header               = Header;
+exports.ViewPlayer           = ViewPlayer;
+exports.EntryItem            = EntryItem;
+exports.EntryItems           = EntryItems;
+exports.GameScore            = GameScore;
+exports.pageComponent        = pageComponent;
+exports.markEntry            = markEntry;
+exports.make                 = make$5;
 /* component Not a pure module */

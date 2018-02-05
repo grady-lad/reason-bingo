@@ -13,7 +13,8 @@ type model = {
 };
 
 type action =
-  | NewGame
+  | LoadGame
+  | NewGame (list(entry))
   | Mark (int);
 
 let initialEntries = [
@@ -24,7 +25,7 @@ let initialEntries = [
 ];
 
 let initialModel = {
-  gameNumber: 1,
+  gameNumber: 0,
   name: "Martin",
   entries: initialEntries,
 };
@@ -43,6 +44,18 @@ let summedScore = (entries: list(entry)) : int => {
     |> List.filter((item) => item.marked)
     |> List.map((item)=> item.points)
     |> summarize
+};
+
+let parseRandomEntryJson = (json: Js.Json.t) : entry => {
+  Json.Decode.{
+    id: field("id", int, json),
+    phrase: field("phrase", string, json),
+    points: field("points", int, json),
+    marked: false
+  };
+};
+let parseRandomEntries = json => {
+  Json.Decode.list(parseRandomEntryJson, json);
 };
 
 /* Components */
@@ -126,9 +139,27 @@ let make = (_children) => {
   initialState: () => {
     initialModel
   },
+  didMount: (self) => {
+    self.send(LoadGame);
+    ReasonReact.NoUpdate;
+  },
   reducer: (action, state) =>
     switch (action) {
-    | NewGame => ReasonReact.Update({...state, entries: initialEntries, gameNumber: (state.gameNumber + 1)})
+    | LoadGame => ReasonReact.SideEffects(self =>
+      Js.Promise.(
+        Fetch.fetch("http://localhost:3000/random-entries/")
+        |> then_(Fetch.Response.json)
+        |> then_(json =>
+          json
+          |> parseRandomEntries
+          |> (entries => {
+              self.send(NewGame(entries)) |> ignore;
+                resolve(entries);
+              }))
+          |> ignore
+        )
+      );
+    | NewGame (randomEntries) => ReasonReact.Update({...state, entries: randomEntries, gameNumber: state.gameNumber + 1})
     | Mark (id) => ReasonReact.Update({...state, entries: markEntry(state.entries, id)})
     },
   render: ({state: {name, entries, gameNumber}, send}) => {
@@ -137,7 +168,7 @@ let make = (_children) => {
       <ViewPlayer name={name} gameNumber={gameNumber}/>
       <EntryItems entries={entries} handleClick={{_id => send (Mark(_id))}}/>
       <GameScore score={summedScore(entries)}/>
-      <button onClick={_event => send(NewGame)}>(str("New Game"))</button>
+      <button onClick={_event => send(LoadGame)}>(str("New Game"))</button>
     </div>
   }
   };
